@@ -1,5 +1,3 @@
-use std::{env, fmt::format};
-
 use reqwest::Client;
 use serde_json::json;
 
@@ -14,7 +12,7 @@ pub async fn send_notification(config: &Config, title: &str, message: &str) -> R
     })
     .to_string();
     let client = Client::new();
-    let req = client
+    let _ = client
         .post(&url)
         .bearer_auth(&*HASSIO_API_KEY)
         .header("Content-type", "application/json")

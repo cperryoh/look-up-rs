@@ -3,11 +3,8 @@ mod notification_senders;
 mod util;
 
 use errors::Result;
-use reqwest::{Client, get};
-use std::{env, fmt::format, sync::LazyLock, time::Duration};
-use tokio::task::JoinSet;
+use std::{env, sync::LazyLock, time::Duration};
 
-use serde::Deserialize;
 use serde_json::Value;
 const API: &str = "https://api.adsb.lol/v2";
 use crate::{
@@ -42,12 +39,11 @@ fn miles_to_nm(miles: &f32) -> f32 {
     miles / 1.151
 }
 fn is_interesting(config: &Config, aircraft: &Aircraft) -> bool {
-    let MILITARY_TYPES = &config.aircraft_types;
-    const MIN_CATEGORY: &str = "A4"; // large stuff
+    let military_types = &config.aircraft_types;
 
     // Known military type is a strong signal
     if let Some(atype) = &aircraft.aircraft_type {
-        if MILITARY_TYPES.iter().any(|t| atype.contains(t)) {
+        if military_types.iter().any(|t| atype.contains(t)) {
             return true;
         }
     }
