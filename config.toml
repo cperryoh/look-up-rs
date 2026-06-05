@@ -1,3 +1,9 @@
-lat=39.786596
-lon=-86.240457
-distance=4
+distance=20
+notify_entity="mobile_app_sm_s937u"
+min_height=30000
+location_entity="device_tracker.sm_s937u"
+aircraft_types=["MQ9", "AH64", "UH60", "CH47", "C130", "C17"]
+update_interval_min=5
+[location]
+lat=39.786645 
+lon=-86.240479

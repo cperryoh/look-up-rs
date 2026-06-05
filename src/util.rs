@@ -1,9 +1,21 @@
+use crate::{HASSIO_API_KEY, HASSIO_URL, errors::Result};
+use reqwest::Client;
 use serde::{Deserialize, Serialize};
-#[derive(Deserialize)]
+use serde_json::Value;
+#[derive(Deserialize,Clone)]
 pub struct Config {
-    pub lat: f32,
-    pub lon: f32,
     pub distance: f32,
+    pub notify_entity: String,
+    pub min_height:u32,
+    pub aircraft_types:Vec<String>,
+    pub location_entity: String,
+    pub location: Location,
+    pub update_interval_min:u64
+}
+#[derive(Clone, Deserialize)]
+pub struct Location {
+    pub lat: f64,
+    pub lon: f64,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
@@ -15,16 +27,16 @@ pub struct Aircraft {
     pub source_type: String,
 
     #[serde(rename = "flight")]
-    pub callsign: String,
+    pub callsign: Option<String>,
 
     #[serde(rename = "r")]
-    pub registration: String,
+    pub registration: Option<String>,
 
     #[serde(rename = "t")]
-    pub aircraft_type: String,
+    pub aircraft_type: Option<String>,
 
     #[serde(rename = "alt_baro")]
-    pub altitude_barometric: Option<i32>,
+    pub altitude_barometric: Option<u32>,
 
     #[serde(rename = "alt_geom")]
     pub altitude_geometric: Option<i32>,
@@ -33,7 +45,7 @@ pub struct Aircraft {
     pub track: Option<f32>,
 
     #[serde(rename = "category")]
-    pub aircraft_category: String,
+    pub aircraft_category: Option<String>,
 
     #[serde(rename = "nav_qnh")]
     pub nav_qnh: Option<f32>,
@@ -103,4 +115,64 @@ pub struct Aircraft {
 
     #[serde(rename = "dir")]
     pub direction_degrees: f32,
+}
+
+pub fn bearing_to_target(
+    observer_lat: f64,
+    observer_lon: f64,
+    target_lat: f64,
+    target_lon: f64,
+) -> f32 {
+    let lat1 = observer_lat.to_radians();
+    let lat2 = target_lat.to_radians();
+    let dlon = (target_lon - observer_lon).to_radians();
+
+    let y = dlon.sin() * lat2.cos();
+    let x = lat1.cos() * lat2.sin() - lat1.sin() * lat2.cos() * dlon.cos();
+
+    let bearing = y.atan2(x).to_degrees();
+    ((bearing + 360.0) % 360.0) as f32
+}
+pub fn degrees_to_cardinal(degrees: f32) -> &'static str {
+    let normalized = ((degrees + 22.5) % 360.0) as u32 / 45;
+    match normalized {
+        0 => "N",
+        1 => "NE",
+        2 => "E",
+        3 => "SE",
+        4 => "S",
+        5 => "SW",
+        6 => "W",
+        7 => "NW",
+        _ => "?",
+    }
+}
+pub async fn get_origin_location(config: &Config) -> Result<Location> {
+    let endpoint = format!("/api/states/{}", config.location_entity);
+    let url = format!("{}{}", &*HASSIO_URL, endpoint);
+    let client = Client::new();
+    let req = client
+        .get(url)
+        .bearer_auth(&*HASSIO_API_KEY)
+        .send()
+        .await?
+        .error_for_status()?;
+    let res = req.text().await?;
+    let res: Value = serde_json::from_str(&res).unwrap();
+    Ok(Location {
+        lat: res
+            .get("attributes")
+            .unwrap()
+            .get("latitude")
+            .unwrap()
+            .as_f64()
+            .unwrap(),
+        lon: res
+            .get("attributes")
+            .unwrap()
+            .get("longitude")
+            .unwrap()
+            .as_f64()
+            .unwrap(),
+    })
 }
