@@ -17,3 +17,15 @@ A Tool to spot interesting planes flying overhead. Notifications delivered via h
 | static_location.lat       | Latitude of static location                                                                                    |
 | static_location.lon       | Longitude of static location                                                                                   |
 | update_interval_min       | Interval to check for new aircraft                                                                             |
+### Example config
+```toml
+distance=20
+notify_entity="mobile_app_sm_s937u"
+min_height=30000
+location_entity="device_tracker.sm_s937u"
+aircraft_types=["MQ9", "AH64", "UH60", "CH47", "C130", "C17"]
+update_interval_min=5
+[static_location]
+lat=38.898074
+lon=-77.036545
+```
