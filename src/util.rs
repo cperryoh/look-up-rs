@@ -2,15 +2,15 @@ use crate::{HASSIO_API_KEY, HASSIO_URL, errors::Result};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-#[derive(Deserialize,Clone)]
+#[derive(Deserialize, Clone)]
 pub struct Config {
     pub distance: f32,
     pub notify_entity: String,
-    pub min_height:u32,
-    pub aircraft_types:Vec<String>,
+    pub min_height: u32,
+    pub aircraft_types: Vec<String>,
     pub location_entity: String,
     pub static_location: Location,
-    pub update_interval_min:u64
+    pub update_interval_min: u64,
 }
 #[derive(Clone, Deserialize)]
 pub struct Location {

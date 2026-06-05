@@ -1,11 +1,11 @@
-mod notification_senders;
 mod errors;
+mod notification_senders;
 mod util;
 
 use errors::Result;
 use reqwest::{Client, get};
-use tokio::task::JoinSet;
 use std::{env, fmt::format, sync::LazyLock, time::Duration};
+use tokio::task::JoinSet;
 
 use serde::Deserialize;
 use serde_json::Value;
@@ -41,8 +41,8 @@ async fn get_data(config: &Config, location: &Location) -> Result<Vec<Aircraft>>
 fn miles_to_nm(miles: &f32) -> f32 {
     miles / 1.151
 }
-fn is_interesting(config:&Config,aircraft: &Aircraft) -> bool {
-    let MILITARY_TYPES =&config.aircraft_types;
+fn is_interesting(config: &Config, aircraft: &Aircraft) -> bool {
+    let MILITARY_TYPES = &config.aircraft_types;
     const MIN_CATEGORY: &str = "A4"; // large stuff
 
     // Known military type is a strong signal
@@ -52,7 +52,7 @@ fn is_interesting(config:&Config,aircraft: &Aircraft) -> bool {
         }
     }
 
-    if let Some(alt) =  aircraft.altitude_barometric {
+    if let Some(alt) = aircraft.altitude_barometric {
         if alt > config.min_height {
             return true;
         }
@@ -68,14 +68,14 @@ async fn check_for_planes(config: &Config, location: &Location) -> Result<Vec<Ai
     Ok(get_data(config, location)
         .await?
         .into_iter()
-        .filter(|a| is_interesting(&config,a))
+        .filter(|a| is_interesting(&config, a))
         .collect::<Vec<_>>())
 }
 async fn send_notification_for_interesting_plane(
     config: &Config,
     origin_location: &Location,
     aircraft: &Aircraft,
-)->Result<()> {
+) -> Result<()> {
     let bearing = bearing_to_target(
         origin_location.lat,
         origin_location.lon,
@@ -118,8 +118,10 @@ async fn main() {
                 println!("Failed to check for planes");
                 continue;
             };
-            for plane in planes{
-                send_notification_for_interesting_plane(&config, &location, &plane).await.expect("Failed to send notification");
+            for plane in planes {
+                send_notification_for_interesting_plane(&config, &location, &plane)
+                    .await
+                    .expect("Failed to send notification");
             }
             tokio::time::sleep(Duration::from_mins(config.update_interval_min)).await;
         }
