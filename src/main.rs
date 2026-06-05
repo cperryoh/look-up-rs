@@ -42,7 +42,7 @@ fn miles_to_nm(miles: &f32) -> f32 {
     miles / 1.151
 }
 fn is_interesting(config:&Config,aircraft: &Aircraft) -> bool {
-    const MILITARY_TYPES: &[&str] = &[];
+    let MILITARY_TYPES =&config.aircraft_types;
     const MIN_CATEGORY: &str = "A4"; // large stuff
 
     // Known military type is a strong signal
