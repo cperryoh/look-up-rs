@@ -5,7 +5,7 @@ A Tool to spot interesting planes flying overhead. Notifications delivered via h
 |----------------|---------------------------|
 | HASSIO_API_KEY | Api key to home assistant |
 | HASSIO_URL     | Home assistant url        |
-|                |                           |
+
 ## config.toml
 | Key                       | Desc                                                                                                           |
 |---------------------------|----------------------------------------------------------------------------------------------------------------|
