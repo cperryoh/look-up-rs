@@ -109,7 +109,6 @@ async fn main() {
     dotenv::dotenv().expect("Failed to load env");
     let check_thread = tokio::spawn(async {
         let config = load_config();
-        send_notification(&config, "First", "Test").await.expect("failed");
         loop {
             let location = get_origin_location(&config)
                 .await
