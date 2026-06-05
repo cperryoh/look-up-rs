@@ -9,7 +9,7 @@ pub struct Config {
     pub min_height:u32,
     pub aircraft_types:Vec<String>,
     pub location_entity: String,
-    pub location: Location,
+    pub static_location: Location,
     pub update_interval_min:u64
 }
 #[derive(Clone, Deserialize)]

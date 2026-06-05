@@ -112,7 +112,7 @@ async fn main() {
         loop {
             let location = get_origin_location(&config)
                 .await
-                .unwrap_or_else(|_| config.location.clone());
+                .unwrap_or_else(|_| config.static_location.clone());
             let planes = check_for_planes(&config, &location).await;
             let Ok(planes) = planes else {
                 println!("Failed to check for planes");
