@@ -3,7 +3,7 @@ mod notification_senders;
 mod util;
 
 use errors::Result;
-use std::{env, sync::LazyLock, time::Duration};
+use std::{any::Any, env, sync::LazyLock, time::Duration};
 
 use serde_json::Value;
 const API: &str = "https://api.adsb.lol/v2";
@@ -49,7 +49,7 @@ fn is_interesting(config: &Config, aircraft: &Aircraft) -> bool {
     }
 
     if let Some(alt) = aircraft.altitude_barometric {
-        if alt > config.min_height {
+        if alt >= config.min_height {
             return true;
         }
     }
@@ -80,14 +80,14 @@ async fn send_notification_for_interesting_plane(
     );
     let direction = degrees_to_cardinal(bearing);
 
-    let aircraft_id = aircraft
-        .callsign
-        .as_ref()
-        .map(|c| c.trim())
-        .filter(|c| !c.is_empty())
-        .unwrap_or_else(|| aircraft.aircraft_type.as_deref().unwrap_or("Aircraft"));
-
-    let title = format!("{} spotted", aircraft_id);
+    let title = format!(
+        "{} spotted",
+        aircraft
+            .aircraft_type
+            .as_ref()
+            .cloned()
+            .unwrap_or_else(|| "Unknown".into())
+    );
 
     let altitude = aircraft.altitude_barometric.unwrap_or(0);
     let distance_miles = aircraft.distance_km * 0.621371;
