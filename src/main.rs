@@ -15,7 +15,9 @@ use crate::{
 };
 
 static HASSIO_API_KEY: LazyLock<String> = LazyLock::new(|| env::var("HASSIO_API_KEY").unwrap());
-static HASSIO_URL: LazyLock<String> = LazyLock::new(|| env::var("HASSIO_URL").unwrap());
+static HASSIO_URL: LazyLock<String> = LazyLock::new(|| env::var("HASSIO_SERVER_URL").unwrap());
+static NTFY_API_KEY: LazyLock<String> = LazyLock::new(|| env::var("NTFY_API_KEY").unwrap());
+static NTFY_URL: LazyLock<String> = LazyLock::new(|| env::var("NTFY_SERVER_URL").unwrap());
 
 async fn get_data(config: &Config, location: &Location) -> Result<Vec<Aircraft>> {
     let url = format!(
@@ -48,10 +50,10 @@ fn is_interesting(config: &Config, aircraft: &Aircraft) -> bool {
         }
     }
 
-    if let Some(alt) = aircraft.altitude_barometric {
-        if alt >= config.min_height {
-            return true;
-        }
+    if let Some(alt) = aircraft.altitude_barometric
+        && alt >= config.min_height
+    {
+        return true;
     }
 
     false
@@ -96,13 +98,21 @@ async fn send_notification_for_interesting_plane(
         "Look {} • {}ft • {:.1} mi away",
         direction, altitude, distance_miles,
     );
-    send_notification(&config, &title, &message).await?;
+    send_notification(
+        &title,
+        &message,
+        Some(format!("https://adsb.lol/?iaco={}", aircraft.icao_address)),
+    )
+    .await?;
     Ok(())
 }
 #[tokio::main]
 
 async fn main() {
     dotenv::dotenv().expect("Failed to load env");
+    send_notification("Starting", "Look up rs is watching the skies")
+        .await
+        .unwrap();
     let check_thread = tokio::spawn(async {
         let config = load_config();
         loop {

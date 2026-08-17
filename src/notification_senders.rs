@@ -1,25 +1,34 @@
 use reqwest::Client;
 use serde_json::json;
 
-use crate::{HASSIO_API_KEY, HASSIO_URL, errors::Result, util::Config};
+use crate::{NTFY_API_KEY, NTFY_URL, errors::Result};
 
-pub async fn send_notification(config: &Config, title: &str, message: &str) -> Result<()> {
-    let endpoint = format!("/api/services/notify/{}", config.notify_entity);
-    let url = format!("{}{}", &*HASSIO_URL, endpoint);
-    let hassio_data = json!({
-        "message":message,
-        "title":title,
-    })
-    .to_string();
+pub async fn send_notification(title: &str, message: &str, view_url: Option<String>) -> Result<()> {
     let client = Client::new();
+    let mut body = json!({
+        "topic": "look_up",
+        "message": message,
+        "title": title
+    });
+
+    if let Some(url) = view_url {
+        body.as_object_mut().unwrap().insert(
+            "actions".to_string(),
+            json!([
+                {
+                    "action": "view",
+                    "label": "Open Url",
+                    "url": url
+                }
+            ]),
+        );
+    }
     let _ = client
-        .post(&url)
-        .bearer_auth(&*HASSIO_API_KEY)
-        .header("Content-type", "application/json")
-        .body(hassio_data)
+        .post((*NTFY_URL).to_string())
+        .bearer_auth(&*NTFY_API_KEY)
+        .body(body.to_string())
         .send()
-        .await?
-        .error_for_status()?;
+        .await?;
 
     Ok(())
 }
