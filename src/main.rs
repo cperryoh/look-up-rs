@@ -110,7 +110,7 @@ async fn send_notification_for_interesting_plane(
 
 async fn main() {
     dotenv::dotenv().expect("Failed to load env");
-    send_notification("Starting", "Look up rs is watching the skies")
+    send_notification("Starting", "Look up rs is watching the skies",None)
         .await
         .unwrap();
     let check_thread = tokio::spawn(async {

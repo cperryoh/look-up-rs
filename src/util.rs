@@ -1,4 +1,4 @@
-use crate::{NTFY_API_KEY, NTFY_URL, errors::Result};
+use crate::{HASSIO_API_KEY, HASSIO_URL, NTFY_API_KEY, NTFY_URL, errors::Result};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -149,7 +149,7 @@ pub fn degrees_to_cardinal(degrees: f32) -> &'static str {
 }
 pub async fn get_origin_location(config: &Config) -> Result<Location> {
     let endpoint = format!("/api/states/{}", config.location_entity);
-    let url = format!("{}{}", &*HASSIO_SERVER_URL, endpoint);
+    let url = format!("{}{}", &*HASSIO_URL, endpoint);
     let client = Client::new();
     let req = client
         .get(url)
