@@ -1,4 +1,4 @@
-use crate::{HASSIO_API_KEY, HASSIO_URL, NTFY_API_KEY, NTFY_URL, errors::Result};
+use crate::{HASSIO_API_KEY, HASSIO_URL, errors::Result};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;

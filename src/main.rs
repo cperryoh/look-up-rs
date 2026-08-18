@@ -3,7 +3,7 @@ mod notification_senders;
 mod util;
 
 use errors::Result;
-use std::{any::Any, env, sync::LazyLock, time::Duration};
+use std::{env, sync::LazyLock, time::Duration};
 
 use serde_json::Value;
 const API: &str = "https://api.adsb.lol/v2";
@@ -31,7 +31,7 @@ async fn get_data(config: &Config, location: &Location) -> Result<Vec<Aircraft>>
     let res: Value = serde_json::from_str(&res)?;
     let aircraft_array = res.get("ac").unwrap().as_array().unwrap();
     let aircraft_array = aircraft_array
-        .into_iter()
+        .iter()
         .map(|a| serde_json::from_value(a.clone()).unwrap())
         .collect::<Vec<_>>();
 
@@ -44,11 +44,10 @@ fn is_interesting(config: &Config, aircraft: &Aircraft) -> bool {
     let military_types = &config.aircraft_types;
 
     // Known military type is a strong signal
-    if let Some(atype) = &aircraft.aircraft_type {
-        if military_types.iter().any(|t| atype.contains(t)) {
+    if let Some(atype) = &aircraft.aircraft_type
+        && military_types.iter().any(|t| atype.contains(t)) {
             return true;
         }
-    }
 
     if let Some(alt) = aircraft.altitude_barometric
         && alt >= config.min_height
@@ -66,11 +65,11 @@ async fn check_for_planes(config: &Config, location: &Location) -> Result<Vec<Ai
     Ok(get_data(config, location)
         .await?
         .into_iter()
-        .filter(|a| is_interesting(&config, a))
+        .filter(|a| is_interesting(config, a))
         .collect::<Vec<_>>())
 }
 async fn send_notification_for_interesting_plane(
-    config: &Config,
+    _config: &Config,
     origin_location: &Location,
     aircraft: &Aircraft,
 ) -> Result<()> {
