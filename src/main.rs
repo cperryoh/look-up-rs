@@ -101,7 +101,7 @@ async fn send_notification_for_interesting_plane(
     send_notification(
         &title,
         &message,
-        Some(format!("https://adsb.lol/?iaco={}", aircraft.icao_address)),
+        Some(format!("https://adsb.lol/?icao={}", aircraft.icao_address)),
     )
     .await?;
     Ok(())
