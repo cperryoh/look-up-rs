@@ -36,8 +36,7 @@ pub struct Aircraft {
     pub aircraft_type: Option<String>,
 
     #[serde(rename = "alt_baro")]
-    pub altitude_barometric: Option<u32>,
-
+    pub altitude_barometric: Option<serde_json::Value>,
     #[serde(rename = "alt_geom")]
     pub altitude_geometric: Option<i32>,
 

@@ -48,9 +48,13 @@ fn is_interesting(config: &Config, aircraft: &Aircraft) -> bool {
         && military_types.iter().any(|t| atype.contains(t)) {
             return true;
         }
+    let alt = aircraft
+        .altitude_barometric
+        .as_ref()
+        .and_then(|v| v.as_u64())
+        .unwrap_or(0) as u32;
 
-    if let Some(alt) = aircraft.altitude_barometric
-        && alt >= config.min_height
+    if alt >= config.min_height
     {
         return true;
     }
@@ -83,12 +87,16 @@ async fn send_notification_for_interesting_plane(
             .unwrap_or_else(|| "Unknown".into())
     );
 
-    let altitude = aircraft.altitude_barometric.unwrap_or(0);
+    let alt = aircraft
+        .altitude_barometric
+        .as_ref()
+        .and_then(|v| v.as_u64())
+        .unwrap_or(0) as u32;
     let distance_miles = aircraft.distance_km * 0.621371;
 
     let message = format!(
         "Look {} • {}ft • {:.1} mi away",
-        direction, altitude, distance_miles,
+        direction, alt, distance_miles,
     );
     send_notification(
         &title,
