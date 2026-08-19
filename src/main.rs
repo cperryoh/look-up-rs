@@ -3,7 +3,7 @@ mod notification_senders;
 mod util;
 
 use errors::Result;
-use std::{env, sync::LazyLock, time::Duration};
+use std::{collections::HashMap, env, sync::LazyLock, time::{Duration, Instant}};
 
 use serde_json::Value;
 const API: &str = "https://api.adsb.lol/v2";
@@ -61,13 +61,6 @@ fn load_config() -> Config {
     let cfg_str = std::fs::read_to_string("./config.toml").unwrap();
     toml::from_str(&cfg_str).unwrap()
 }
-async fn check_for_planes(config: &Config, location: &Location) -> Result<Vec<Aircraft>> {
-    Ok(get_data(config, location)
-        .await?
-        .into_iter()
-        .filter(|a| is_interesting(config, a))
-        .collect::<Vec<_>>())
-}
 async fn send_notification_for_interesting_plane(
     _config: &Config,
     origin_location: &Location,
@@ -105,31 +98,50 @@ async fn send_notification_for_interesting_plane(
     .await?;
     Ok(())
 }
-#[tokio::main]
+async fn check_for_planes(config: &Config, location: &Location) -> Result<Vec<Aircraft>> {
+    let planes = get_data(config, location).await?;
+    Ok(planes
+        .into_iter()
+        .filter(|a| is_interesting(config, a))
+        .collect())
+}
 
+#[tokio::main]
 async fn main() {
-    dotenv::dotenv().expect("Failed to load env");
-    send_notification("Starting", "Look up rs is watching the skies",None)
-        .await
-        .unwrap();
-    let check_thread = tokio::spawn(async {
-        let config = load_config();
-        loop {
-            let location = get_origin_location(&config)
-                .await
-                .unwrap_or_else(|_| config.static_location.clone());
-            let planes = check_for_planes(&config, &location).await;
-            let Ok(planes) = planes else {
-                println!("Failed to check for planes");
-                continue;
-            };
-            for plane in planes {
-                send_notification_for_interesting_plane(&config, &location, &plane)
-                    .await
-                    .expect("Failed to send notification");
+    dotenv::dotenv().ok();
+    
+    if let Err(e) = send_notification("Starting", "Look up rs is watching the skies", None).await {
+        eprintln!("Failed to send startup notification: {e}");
+    }
+
+    let config = load_config();
+    let mut seen_cache: HashMap<String, Instant> = HashMap::new();
+
+    loop {
+        let location = get_origin_location(&config)
+            .await
+            .unwrap_or_else(|_| config.static_location.clone());
+
+        match check_for_planes(&config, &location).await {
+            Ok(planes) => {
+                // Prune old aircraft cache entries (> 1 hour)
+                seen_cache.retain(|_, time| time.elapsed() < Duration::from_secs(3600));
+
+                for plane in planes {
+                    if seen_cache.contains_key(&plane.icao_address) {
+                        continue;
+                    }
+
+                    if let Err(e) = send_notification_for_interesting_plane(&config, &location, &plane).await {
+                        eprintln!("Failed notification for {}: {e}", plane.icao_address);
+                    } else {
+                        seen_cache.insert(plane.icao_address.clone(), Instant::now());
+                    }
+                }
             }
-            tokio::time::sleep(Duration::from_mins(config.update_interval_min)).await;
+            Err(e) => eprintln!("Failed checking airspace: {e}"),
         }
-    });
-    let _ = check_thread.await;
+
+        tokio::time::sleep(Duration::from_secs(config.update_interval_min * 60)).await;
+    }
 }
